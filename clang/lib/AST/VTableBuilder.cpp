@@ -1661,6 +1661,8 @@ void ItaniumVTableBuilder::LayoutPrimaryAndSecondaryVTables(
   if (Base.getBase() == MostDerivedClass)
     VBaseOffsetOffsets = Builder.getVBaseOffsetOffsets();
 
+  uint64_t AddressPoint = Components.size();
+
   // Add the offset to top.
   CharUnits OffsetToTop = MostDerivedClassOffset - OffsetInLayoutClass;
   Components.push_back(VTableComponent::MakeOffsetToTop(OffsetToTop));
@@ -1668,7 +1670,9 @@ void ItaniumVTableBuilder::LayoutPrimaryAndSecondaryVTables(
   // Next, add the RTTI.
   Components.push_back(VTableComponent::MakeRTTI(MostDerivedClass));
 
-  uint64_t AddressPoint = Components.size();
+  // -fapple-kext mode on 32-bit has the vtable pointer in a different location.
+  if (!(Context.getLangOpts().AppleKext && Context.getTargetInfo().getTriple().isArch32Bit()))
+    AddressPoint = Components.size();
 
   // Now go through all virtual member functions and add them.
   PrimaryBasesSetVectorTy PrimaryBases;
